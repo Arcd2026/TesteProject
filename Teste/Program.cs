@@ -1,15 +1,39 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Teste.UserDomain;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 🔌 CONNECTION STRING + DB
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// 🔐 IDENTITY
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+// 🔐 CONFIGURAÇÃO DE SENHA (opcional, mas recomendado)
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+});
+
+// 🌐 CONTROLLERS
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// 📄 SWAGGER
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 🌐 MIDDLEWARES
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -18,6 +42,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// 🔐 IMPORTANTE (ordem correta)
+app.UseAuthentication(); // 👈 precisa vir antes
 app.UseAuthorization();
 
 app.MapControllers();
